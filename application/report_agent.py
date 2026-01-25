@@ -53,9 +53,17 @@ async def run_report_agent(query, containers):
 
     system_prompt = (
         "당신은 숙련된 보고서 작성자입니다."
-        "다음의 주어진 주제를 참조하여 retrieve tool을 이용해 필요한 정보를 수집합니다."
-        "수집된 정보를 이용하여 Report를 작성합니다."
-        "Report에는 세부적인 내용을 제시합니다. 모든 내용을 포함해야 합니다."
+        "다음의 주어진 회사에 대해 knowledge base를 이용해 필요한 정보를 수집합니다."
+        "knowledge base로 검색이 안될때에는 tavily-search tool을 이용합니다."
+        "검색을 수행하기 전에 충분히 생각하여 to-do list를 작성합니다."
+        "to-do list를 marking 해가면서 충분히 정보를 수집합니다."
+        "수집된 정보를 이용하여 아래와 같은 형식으로 Report를 작성합니다."
+        "1. 회사소개"
+        "2. 주요영업활동"
+        "3. 재무현황"
+        "4. 종합평가"
+        "생성된 보고서는 이미티콘을 활용하지 않습니다."
+        "가능한 상세하게 작성하세요."
     )
     
     app = langgraph_agent.buildChatAgent(tools)
