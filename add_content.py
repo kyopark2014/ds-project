@@ -198,47 +198,55 @@ def main():
     s3_client = boto3.client('s3', region_name=region)
     bedrock_client = boto3.client('bedrock-agent', region_name=region)
     
-    # Upload configuration
-    file_type = "url"  # "url" or "file"
+    # URL sources to upload
+    url_sources = [
+        {
+            "url": "https://db3lw8u6vdvwu.cloudfront.net/ds/Suzano_SA.pdf",
+            "s3_key": "docs/Suzano_SA.pdf"
+        }
+    ]
     
-    # URL source settings
-    url = "https://db3lw8u6vdvwu.cloudfront.net/ds/Suzano_SA.pdf"
-    url_s3_key = "docs/Suzano_SA.pdf"
+    # Local file sources to upload
+    file_sources = [
+        {
+            "local_file": "contents/error_code.pdf",
+            "s3_key": "docs/error_code.pdf"
+        }
+    ]
     
-    # Local file source settings
-    local_file = "contents/error_code.pdf"
-    file_s3_key = "docs/error_code.pdf"
+    upload_success = True
     
-    if file_type == "url":
-        s3_key = url_s3_key
-        # Check if file already exists in S3
+    # Upload from URLs
+    for source in url_sources:
+        url = source["url"]
+        s3_key = source["s3_key"]
         if check_file_exists_in_s3(s3_client, s3_bucket, s3_key):
             logger.info(f"File already exists in S3, skipping upload: {s3_key}")
         else:
-            # Upload file from URL to S3
             if not upload_url_to_s3(s3_client, url, s3_bucket, s3_key):
-                return False
-    elif file_type == "file":
-        s3_key = file_s3_key
-        # Check if file exists locally
+                upload_success = False
+    
+    # Upload from local files
+    for source in file_sources:
+        local_file = source["local_file"]
+        s3_key = source["s3_key"]
         if not os.path.exists(local_file):
             logger.error(f"File not found: {local_file}")
-            return False
-        # Check if file already exists in S3
+            upload_success = False
+            continue
         if check_file_exists_in_s3(s3_client, s3_bucket, s3_key):
             logger.info(f"File already exists in S3, skipping upload: {s3_key}")
         else:
-            # Upload local file to S3
             if not upload_file_to_s3(s3_client, local_file, s3_bucket, s3_key):
-                return False
-    else:
-        logger.error(f"Invalid file_type: {file_type}. Use 'url' or 'file'.")
-        return False
+                upload_success = False
+    
+    if not upload_success:
+        logger.warning("Some files failed to upload")
     
     # Sync Knowledge Base
     if sync_knowledge_base(bedrock_client, knowledge_base_id):
         logger.info("✓ Knowledge Base sync initiated successfully")
-        return True
+        return upload_success
     else:
         return False
 
